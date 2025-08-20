@@ -4,7 +4,6 @@ from io import StringIO
 from datetime import datetime
 from github import Github
 import time
-from streamlit_autorefresh import st_autorefresh
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -206,6 +205,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
