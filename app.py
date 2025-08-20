@@ -36,7 +36,7 @@ def save_data(df, commit_msg="Update check-in"):
                 return False
 
 # --- Streamlit UI ---
-st.title("🎟 Conference Participant Tracker")
+st.title("🎟 Conference Participants Tracker")
 
 df = load_data()
 
@@ -156,6 +156,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
