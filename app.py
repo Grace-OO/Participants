@@ -70,6 +70,7 @@ def validate_action(participant_row, action_col):
 def auto_dismiss_message(message, msg_type="success", timeout=3000):
     placeholder = st.empty()
 
+    # Show the message
     if msg_type == "success":
         placeholder.success(message)
     elif msg_type == "error":
@@ -79,21 +80,24 @@ def auto_dismiss_message(message, msg_type="success", timeout=3000):
     elif msg_type == "info":
         placeholder.info(message)
 
-    # Inject JavaScript to auto-hide the Streamlit notification
+    # Inject JavaScript to auto-clear *this specific placeholder*
     st.markdown(
         f"""
         <script>
         setTimeout(function() {{
-            var alerts = window.parent.document.querySelectorAll('[data-testid="stNotification"]');
-            if (alerts.length > 0) {{
-                alerts[alerts.length - 1].style.display = "none";
+            var iframe = window.parent.document.querySelector('iframe[srcdoc]');
+            if (iframe) {{
+                var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+                var alerts = innerDoc.querySelectorAll('[data-testid="stNotification"]');
+                if (alerts.length > 0) {{
+                    alerts[alerts.length - 1].style.display = "none";
+                }}
             }}
         }}, {timeout});
         </script>
         """,
         unsafe_allow_html=True
     )
-
 
 # --- Bus Check-in Tab ---
 with tab1:
@@ -211,6 +215,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
