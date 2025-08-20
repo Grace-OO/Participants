@@ -1,7 +1,7 @@
-ID Code,Name,Bus Check-in,Timestamp,Food Collection,Food Timestamp,Override ,Override Timestamp,Bus Timestamp
-A5K7F9,Person A,,,,,,,
-B9P4J8,Person B,,,,,,,
-C5R4Y7,Person C,,,,,,,
-D4F6M8,Person D,,,,,,,
-E3B5N0,Person E,,,,,,,
-F2Q7V9,Person F,,,,,,,
+ID Code,Name,Assigned Day,Bus Check-in,Timestamp,Food Collection,Food Timestamp,Override ,Override Timestamp,Bus Timestamp
+A5K7F9,Person A,,,,,,,,
+B9P4J8,Person B,,,,,,,,
+C5R4Y7,Person C,,,,,,,,
+D4F6M8,Person D,,,,,,,,
+E3B5N0,Person E,,,,,,,,
+F2Q7V9,Person F,,,,,,,,
