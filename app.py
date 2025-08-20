@@ -107,16 +107,29 @@ with tab3:
 # --- Dashboard Tab ---
 with tab4:
     st.header("📊 Dashboard")
-    st.dataframe(load_data())
+    df_latest = load_data()
+    st.dataframe(df_latest)
 
-    bus_count = (df.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
-    food_count = (df.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
-    override_count = (df.get("Override", pd.Series(dtype=str)) == "Yes").sum()
+    # Add download button
+    csv_data = df_latest.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="⬇️ Download CSV",
+        data=csv_data,
+        file_name="conference_checkins.csv",
+        mime="text/csv",
+    )
+
+    # Metrics
+    bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
+    food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
+    override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
+
 
 
 
