@@ -78,98 +78,59 @@ def auto_dismiss_message(message, msg_type="success"):
         st.toast(f"ℹ️ {message}", icon="ℹ️")
 
 
+# --- Action Handler Helper ---
+def handle_action(tab, header, activity, button_label, field_name, df_field, timestamp_field):
+    with tab:
+        st.header(header)
+        id_code = st.text_input(f"Enter Participant ID ({activity}):").strip()
+
+        if id_code:
+            participant_row = get_participant(id_code)
+
+            if not participant_row.empty:
+                participant = participant_row.iloc[0]
+                participant_name = participant["Name"]
+
+                auto_dismiss_message(
+                    f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
+                    "info"
+                )
+
+                status, msg = validate_action(participant, activity)
+                if status == "invalid_day":
+                    auto_dismiss_message(msg, "error")
+                elif status == "already":
+                    auto_dismiss_message(msg, "warning")
+                else:
+                    if st.button(button_label):
+                        df = load_data()
+                        df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
+                        df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        if save_data(df, f"{activity} for {participant_name}"):
+                            load_data.clear()
+                            auto_dismiss_message(f"{participant_name} {button_label}", "success")
+
+            else:
+                auto_dismiss_message("Participant not found.", "error")
 
 # --- Bus Check-in Tab ---
-with tab1:
-   st.header("🚌 Bus Check-in")
-    id_code = st.text_input("Enter Participant ID (Bus):").strip()
-
-    if id_code:
-        participant_row = get_participant(id_code)
-
-        if not participant_row.empty:
-            participant = participant_row.iloc[0]
-            participant_name = participant["Name"]
-
-            st.success(f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})")
-
-            status, msg = validate_action(participant, "Bus Check-in")
-            if status == "invalid_day":
-                auto_dismiss_message(msg, "error")
-            elif status == "already":
-                auto_dismiss_message(msg, "warning")
-            else:
-                if st.button("Check-in for Bus"):
-                    df = load_data()
-                    df.loc[df["ID Code"].astype(str) == id_code, "Bus Check-in"] = "Yes"
-                    df.loc[df["ID Code"].astype(str) == id_code, "Bus Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    if save_data(df, f"Bus check-in for {participant_name}"):
-                        load_data.clear()
-                        auto_dismiss_message(f"{participant_name} checked in for Bus", "success")
-
-        else:
-            auto_dismiss_message("Participant not found.", "error")
+handle_action(
+    tab1, "🚌 Bus Check-in", "Bus Check-in",
+    "Check-in for Bus", "Bus Check-in", "Bus Check-in", "Bus Timestamp"
+)
 
 # --- Food Collection Tab ---
-with tab2:
-    st.header("🍽 Food Collection")
-    id_code = st.text_input("Enter Participant ID (Food):").strip()
-
-    if id_code:
-        participant_row = get_participant(id_code)
-
-        if not participant_row.empty:
-            participant = participant_row.iloc[0]
-            participant_name = participant["Name"]
-
-            st.success(f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})")
-
-            status, msg = validate_action(participant, "Food Collection")
-            if status == "invalid_day":
-                auto_dismiss_message(msg, "error")
-            elif status == "already":
-                auto_dismiss_message(msg, "warning")
-            else:
-                if st.button("Collect Food"):
-                    df = load_data()
-                    df.loc[df["ID Code"].astype(str) == id_code, "Food Collection"] = "Yes"
-                    df.loc[df["ID Code"].astype(str) == id_code, "Food Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    if save_data(df, f"Food collection for {participant_name}"):
-                        load_data.clear()
-                        auto_dismiss_message(f"{participant_name} collected Food", "success")
-
-        else:
-            auto_dismiss_message("Participant not found.", "error")
-
+handle_action(
+    tab2, "🍽 Food Collection", "Food Collection",
+    "Collect Food", "Food Collection", "Food Collection", "Food Timestamp"
+)
 
 # --- Overrides Tab ---
-with tab3:
-    st.header("🔑 Overrides")
-    id_code = st.text_input("Enter Participant ID (Override):").strip()
+handle_action(
+    tab3, "🔑 Overrides", "Override",
+    "Apply Override", "Override", "Override", "Override Timestamp"
+)
 
-    if id_code:
-        participant_row = get_participant(id_code)
-
-        if not participant_row.empty:
-            participant = participant_row.iloc[0]
-            participant_name = participant["Name"]
-
-            st.success(f"👤 Found: {participant_name}")
-
-            status, msg = validate_action(participant, "Override")
-            if status == "already":
-                auto_dismiss_message(msg, "warning")
-            else:
-                if st.button("Apply Override"):
-                    df = load_data()
-                    df.loc[df["ID Code"].astype(str) == id_code, "Override"] = "Yes"
-                    df.loc[df["ID Code"].astype(str) == id_code, "Override Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    if save_data(df, f"Override for {participant_name}"):
-                        load_data.clear()
-                        auto_dismiss_message(f"Override applied for {participant_name}", "success")
-
-        else:
-            auto_dismiss_message("Participant not found.", "error")
             
 # --- Dashboard Tab ---
 with tab4:
@@ -195,6 +156,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
