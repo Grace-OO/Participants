@@ -40,6 +40,12 @@ st.title("🎟 Conference Participant Tracker")
 
 df = load_data()
 
+# --- Helper: get participant by ID ---
+def get_participant(id_code):
+    df_latest = load_data()  # always use the latest data
+    return df_latest[df_latest["ID Code"].astype(str) == str(id_code)]
+
+
 # Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"])
 
@@ -205,6 +211,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
