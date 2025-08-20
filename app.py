@@ -97,6 +97,7 @@ st.subheader("📊 Check-in Dashboard")
 st.dataframe(load_data())
 
 bus_count = (df.get("Bus Check-in") == "Yes").sum()
-food_count = (df.get("Food Check-in") == "Yes").sum()
+food_count = (df.get("Food Collection") == "Yes").sum()
 st.metric("Bus Check-ins", int(bus_count))
-st.metric("Food Check-ins", int(food_count))
+st.metric("Food Collection", int(food_count))
+
