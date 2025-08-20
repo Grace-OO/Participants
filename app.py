@@ -113,8 +113,9 @@ with tab4:
     food_count = (df.get("Food Collection") == "Yes").sum()
     override_count = (df.get("Override") == "Yes").sum()
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2= st.columns(2)
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
-    col3.metric("Overrides", int(override_count))
+    
+
 
