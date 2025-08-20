@@ -66,42 +66,22 @@ def validate_action(participant_row, action_col):
     else:
         return "ok", f"✅ Allowed to proceed with {action_col}."
 
- #--- Auto-dismiss helper ---
-def auto_dismiss_message(message, msg_type="success", timeout=3000):
-    placeholder = st.empty()
-
-    # Show the message
+# --- Toast helper ---
+def auto_dismiss_message(message, msg_type="success"):
     if msg_type == "success":
-        placeholder.success(message)
+        st.toast(f"✅ {message}", icon="✅")
     elif msg_type == "error":
-        placeholder.error(message)
+        st.toast(f"❌ {message}", icon="❌")
     elif msg_type == "warning":
-        placeholder.warning(message)
+        st.toast(f"⚠️ {message}", icon="⚠️")
     elif msg_type == "info":
-        placeholder.info(message)
+        st.toast(f"ℹ️ {message}", icon="ℹ️")
 
-    # Inject JavaScript to auto-clear *this specific placeholder*
-    st.markdown(
-        f"""
-        <script>
-        setTimeout(function() {{
-            var iframe = window.parent.document.querySelector('iframe[srcdoc]');
-            if (iframe) {{
-                var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
-                var alerts = innerDoc.querySelectorAll('[data-testid="stNotification"]');
-                if (alerts.length > 0) {{
-                    alerts[alerts.length - 1].style.display = "none";
-                }}
-            }}
-        }}, {timeout});
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
+
 
 # --- Bus Check-in Tab ---
 with tab1:
-    st.header("🚌 Bus Check-in")
+   st.header("🚌 Bus Check-in")
     id_code = st.text_input("Enter Participant ID (Bus):").strip()
 
     if id_code:
@@ -115,9 +95,9 @@ with tab1:
 
             status, msg = validate_action(participant, "Bus Check-in")
             if status == "invalid_day":
-                auto_dismiss_message(msg, "error", timeout=3000)
+                auto_dismiss_message(msg, "error")
             elif status == "already":
-                auto_dismiss_message(msg, "warning", timeout=3000)
+                auto_dismiss_message(msg, "warning")
             else:
                 if st.button("Check-in for Bus"):
                     df = load_data()
@@ -125,10 +105,10 @@ with tab1:
                     df.loc[df["ID Code"].astype(str) == id_code, "Bus Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Bus check-in for {participant_name}"):
                         load_data.clear()
-                        auto_dismiss_message(f"✅ {participant_name} checked in for Bus", "success", timeout=3000)
+                        auto_dismiss_message(f"{participant_name} checked in for Bus", "success")
 
         else:
-            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
+            auto_dismiss_message("Participant not found.", "error")
 
 # --- Food Collection Tab ---
 with tab2:
@@ -146,9 +126,9 @@ with tab2:
 
             status, msg = validate_action(participant, "Food Collection")
             if status == "invalid_day":
-                auto_dismiss_message(msg, "error", timeout=3000)
+                auto_dismiss_message(msg, "error")
             elif status == "already":
-                auto_dismiss_message(msg, "warning", timeout=3000)
+                auto_dismiss_message(msg, "warning")
             else:
                 if st.button("Collect Food"):
                     df = load_data()
@@ -156,10 +136,11 @@ with tab2:
                     df.loc[df["ID Code"].astype(str) == id_code, "Food Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Food collection for {participant_name}"):
                         load_data.clear()
-                        auto_dismiss_message(f"✅ {participant_name} collected Food", "success", timeout=3000)
+                        auto_dismiss_message(f"{participant_name} collected Food", "success")
 
         else:
-            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
+            auto_dismiss_message("Participant not found.", "error")
+
 
 # --- Overrides Tab ---
 with tab3:
@@ -177,7 +158,7 @@ with tab3:
 
             status, msg = validate_action(participant, "Override")
             if status == "already":
-                auto_dismiss_message(msg, "warning", timeout=3000)
+                auto_dismiss_message(msg, "warning")
             else:
                 if st.button("Apply Override"):
                     df = load_data()
@@ -185,11 +166,10 @@ with tab3:
                     df.loc[df["ID Code"].astype(str) == id_code, "Override Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Override for {participant_name}"):
                         load_data.clear()
-                        auto_dismiss_message(f"✅ Override applied for {participant_name}", "success", timeout=3000)
+                        auto_dismiss_message(f"Override applied for {participant_name}", "success")
 
         else:
-            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
-
+            auto_dismiss_message("Participant not found.", "error")
             
 # --- Dashboard Tab ---
 with tab4:
@@ -215,6 +195,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
