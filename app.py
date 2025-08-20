@@ -4,6 +4,7 @@ from io import StringIO
 from datetime import datetime
 from github import Github
 import time
+from streamlit_autorefresh import st_autorefresh
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -43,32 +44,6 @@ df = load_data()
 # Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"])
 
-# --- Helper function: participant lookup ---
-def get_participant(id_code):
-    return df[df["ID Code"].astype(str) == id_code]
-
-# --- Timeout helper ---
-def show_timed_message(key: str, msg: str, msg_type: str = "success", timeout: int = 3):
-    """Stores message in session state with timestamp and type."""
-    st.session_state[key] = {"msg": msg, "type": msg_type, "time": time.time(), "timeout": timeout}
-
-def render_timed_message(key: str):
-    """Renders the message if within timeout."""
-    if key in st.session_state and st.session_state[key]:
-        data = st.session_state[key]
-        if time.time() - data["time"] < data["timeout"]:
-            if data["type"] == "success":
-                st.success(data["msg"])
-            elif data["type"] == "error":
-                st.error(data["msg"])
-            elif data["type"] == "info":
-                st.info(data["msg"])
-            elif data["type"] == "warning":
-                st.warning(data["msg"])
-        else:
-            st.session_state[key] = None  # clear after timeout
-
-
 # Helper function: Check assigned day
 def validate_action(participant_row, action_col):
     # Assigned days may be a list (comma-separated string)
@@ -85,6 +60,34 @@ def validate_action(participant_row, action_col):
         return "already", f"⚠️ Already recorded for {action_col}."
     else:
         return "ok", f"✅ Allowed to proceed with {action_col}."
+
+ #--- Auto-dismiss helper ---
+def auto_dismiss_message(message, msg_type="success", timeout=3000):
+    placeholder = st.empty()
+
+    if msg_type == "success":
+        placeholder.success(message)
+    elif msg_type == "error":
+        placeholder.error(message)
+    elif msg_type == "warning":
+        placeholder.warning(message)
+    elif msg_type == "info":
+        placeholder.info(message)
+
+    # Inject JavaScript to auto-hide the Streamlit notification
+    st.markdown(
+        f"""
+        <script>
+        setTimeout(function() {{
+            var alerts = window.parent.document.querySelectorAll('[data-testid="stNotification"]');
+            if (alerts.length > 0) {{
+                alerts[alerts.length - 1].style.display = "none";
+            }}
+        }}, {timeout});
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # --- Bus Check-in Tab ---
@@ -103,9 +106,9 @@ with tab1:
 
             status, msg = validate_action(participant, "Bus Check-in")
             if status == "invalid_day":
-                show_timed_message("bus_msg", msg, "error")   # 🔹 use timed message
+                auto_dismiss_message(msg, "error", timeout=3000)
             elif status == "already":
-                show_timed_message("bus_msg", msg, "warning") # 🔹 use timed message
+                auto_dismiss_message(msg, "warning", timeout=3000)
             else:
                 if st.button("Check-in for Bus"):
                     df = load_data()
@@ -113,14 +116,10 @@ with tab1:
                     df.loc[df["ID Code"].astype(str) == id_code, "Bus Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Bus check-in for {participant_name}"):
                         load_data.clear()
-                        show_timed_message("bus_msg", f"✅ {participant_name} checked in for Bus")  # 🔹 timed
-
-            # 🔹 Always render message (if still active)
-            render_timed_message("bus_msg")
+                        auto_dismiss_message(f"✅ {participant_name} checked in for Bus", "success", timeout=3000)
 
         else:
-            show_timed_message("bus_msg", "❌ Participant not found.", "error")
-            render_timed_message("bus_msg")
+            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
 
 # --- Food Collection Tab ---
 with tab2:
@@ -138,9 +137,9 @@ with tab2:
 
             status, msg = validate_action(participant, "Food Collection")
             if status == "invalid_day":
-                show_timed_message("food_msg", msg, "error", timeout=3)
+                auto_dismiss_message(msg, "error", timeout=3000)
             elif status == "already":
-                show_timed_message("food_msg", msg, "warning", timeout=3)
+                auto_dismiss_message(msg, "warning", timeout=3000)
             else:
                 if st.button("Collect Food"):
                     df = load_data()
@@ -148,14 +147,10 @@ with tab2:
                     df.loc[df["ID Code"].astype(str) == id_code, "Food Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Food collection for {participant_name}"):
                         load_data.clear()
-                        show_timed_message("food_msg", f"✅ {participant_name} collected Food", "success", timeout=3)
-
-            render_timed_message("food_msg")  # 🔹 Always render message
+                        auto_dismiss_message(f"✅ {participant_name} collected Food", "success", timeout=3000)
 
         else:
-            show_timed_message("food_msg", "❌ Participant not found.", "error", timeout=3)
-            render_timed_message("food_msg")
-
+            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
 
 # --- Overrides Tab ---
 with tab3:
@@ -173,7 +168,7 @@ with tab3:
 
             status, msg = validate_action(participant, "Override")
             if status == "already":
-                show_timed_message("override_msg", msg, "warning", timeout=3)
+                auto_dismiss_message(msg, "warning", timeout=3000)
             else:
                 if st.button("Apply Override"):
                     df = load_data()
@@ -181,13 +176,10 @@ with tab3:
                     df.loc[df["ID Code"].astype(str) == id_code, "Override Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     if save_data(df, f"Override for {participant_name}"):
                         load_data.clear()
-                        show_timed_message("override_msg", f"✅ Override applied for {participant_name}", "success", timeout=3)
-
-            render_timed_message("override_msg")  # 🔹 Always render message
+                        auto_dismiss_message(f"✅ Override applied for {participant_name}", "success", timeout=3000)
 
         else:
-            show_timed_message("override_msg", "❌ Participant not found.", "error", timeout=3)
-            render_timed_message("override_msg")
+            auto_dismiss_message("❌ Participant not found.", "error", timeout=3000)
 
             
 # --- Dashboard Tab ---
@@ -214,6 +206,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
