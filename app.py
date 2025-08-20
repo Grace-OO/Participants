@@ -69,13 +69,13 @@ def validate_action(participant_row, action_col):
 # --- Toast helper ---
 def auto_dismiss_message(message, msg_type="success"):
     if msg_type == "success":
-        st.toast(f"✅ {message}", icon="✅")
+        st.toast(f"{message}", icon="✅")
     elif msg_type == "error":
-        st.toast(f"❌ {message}", icon="❌")
+        st.toast(f"{message}", icon="❌")
     elif msg_type == "warning":
-        st.toast(f"⚠️ {message}", icon="⚠️")
+        st.toast(f"{message}", icon="⚠️")
     elif msg_type == "info":
-        st.toast(f"ℹ️ {message}", icon="ℹ️")
+        st.toast(f"{message}", icon="ℹ️")
 
 
 # --- Action Handler Helper ---
@@ -156,6 +156,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
