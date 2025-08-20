@@ -109,13 +109,14 @@ with tab4:
     st.header("📊 Dashboard")
     st.dataframe(load_data())
 
-    bus_count = (df.get("Bus Check-in") == "Yes").sum()
-    food_count = (df.get("Food Collection") == "Yes").sum()
-    override_count = (df.get("Override") == "Yes").sum()
+    bus_count = (df.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
+    food_count = (df.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
+    override_count = (df.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
-    col1, col2= st.columns(2)
+    col1, col2, col3 = st.columns(3)
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
-    
+    col3.metric("Overrides", int(override_count))
+
 
 
