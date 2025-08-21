@@ -147,13 +147,13 @@ selected_tab = st.radio(
 )
 
 # --- Display content based on selected tab ---
-if st.session_state.active_tab == "🚌 Bus Check-in":
+if selected_tab == "🚌 Bus Check-in":
     handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
-elif st.session_state.active_tab == "🍽 Food Collection":
+elif selected_tab == "🍽 Food Collection":
     handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
-elif st.session_state.active_tab == "🔑 Overrides":
+elif selected_tab == "🔑 Overrides":
     handle_action(st.container(), "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
-elif st.session_state.active_tab == "📊 Dashboard":
+elif selected_tab == "📊 Dashboard":
     st.header("📊 Dashboard")
     df_latest = load_data()
     st.dataframe(df_latest)
@@ -176,5 +176,3 @@ elif st.session_state.active_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
-
-
