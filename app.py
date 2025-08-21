@@ -41,70 +41,10 @@ st.title("🎟 Conference Participants Tracker")
 
 df = load_data()
 
-# --- Helper: get participant by ID ---
-def get_participant(id_code):
-    df_latest = load_data()  # always use the latest data
-    return df_latest[df_latest["ID Code"].astype(str) == str(id_code)]
-
-
-# Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"])
-
-# Helper function: Check assigned day
-def validate_action(participant_row, action_col):
-    # Map each action to the relevant assigned columns
-    action_to_columns = {
-        'Bus Check-in': ['Assigned Day', 'Bus Check-in'],
-        'Food Collection': ['Assigned Day', 'Food Collection'],
-        'Override': ['Override'],
-    }
-    
-    # Get the relevant columns for the action
-    relevant_columns = action_to_columns.get(action_col, ['Assigned Day'])
-    
-    # Combine all relevant assigned dates into a single list, ignoring empty values
-    assigned_days = []
-    for col in relevant_columns:
-        val = participant_row.get(col, "")
-        if pd.notna(val) and val != "":
-            # Handle comma-separated values in any cell
-            assigned_days.extend([d.strip() for d in str(val).split(" ") if d.strip()])
-    
-    # Today's date
-    today_day = datetime.today().strftime("%Y-%m-%d")
-    
-    # Check if action is already done
-    already_done = participant_row.get(action_col, "No") == "Yes"
-    
-    # Validation logic
-    if assigned_days and today_day not in assigned_days and action_col != "Override":
-        return "invalid_day", f"❌ Not assigned for today ({today_day})."
-    elif already_done:
-        return "already", f"⚠️ Already recorded for {action_col}."
-    else:
-        return "ok", f"✅ Allowed to proceed with {action_col}."
-
-# Persistent tab state
-if "current_tab" not in st.session_state:
-    st.session_state.current_tab = "Bus Check-in"
-
-tabs = ["Bus Check-in", "Food Collection", "Overrides"]
-selected_tab = st.radio("Select tab", tabs, index=tabs.index(st.session_state.current_tab))
-st.session_state.current_tab = selected_tab
-
-# Example participant row
-participant_row = {"Assigned Day": "2025-08-21 2025-08-22", "Food Collection": "No"}
-
-# Tab content
-if selected_tab == "Food Collection":
-    if st.button("Validate Food Collection"):
-        status, msg = validate_action(participant_row, "Food Collection")
-        st.success(msg)  # or st.warning/st.error depending on status
-
-# --- Toast helper ---
+# --- Toast helper (fires only once per key) ---
 def auto_dismiss_message(key, message, msg_type="success"):
     if key not in st.session_state:
-        st.session_state[key] = True  # mark as shown
+        st.session_state[key] = True
         if msg_type == "success":
             st.toast(f"{message}", icon="✅")
         elif msg_type == "error":
@@ -114,80 +54,90 @@ def auto_dismiss_message(key, message, msg_type="success"):
         elif msg_type == "info":
             st.toast(f"{message}", icon="ℹ️")
 
-# --- Action Handler Helper ---
-def handle_action(tab, header, activity, button_label, field_name, df_field, timestamp_field):
+# --- Get participant by ID ---
+def get_participant(id_code):
+    df_latest = load_data()
+    return df_latest[df_latest["ID Code"].astype(str) == str(id_code)]
+
+# --- Validation function ---
+def validate_action(participant_row, action_col):
+    action_to_columns = {
+        'Bus Check-in': ['Assigned Day', 'Bus Check-in'],
+        'Food Collection': ['Assigned Day', 'Food Collection'],
+        'Override': ['Override'],
+    }
+    relevant_columns = action_to_columns.get(action_col, ['Assigned Day'])
+
+    assigned_days = []
+    for col in relevant_columns:
+        val = participant_row.get(col, "")
+        if pd.notna(val) and val != "":
+            assigned_days.extend([d.strip() for d in str(val).split(" ") if d.strip()])
+
+    today_day = datetime.today().strftime("%Y-%m-%d")
+    already_done = participant_row.get(action_col, "No") == "Yes"
+
+    if assigned_days and today_day not in assigned_days and action_col != "Override":
+        return "invalid_day", f"❌ You are not assigned for today ({today_day})."
+    elif already_done:
+        return "already", f"⚠️ This action has already been recorded for {action_col}."
+    else:
+        return "ok", f"✅ You may proceed with {action_col}."
+
+# --- Action handler ---
+def handle_action(tab, header, activity, button_label, df_field, timestamp_field):
     with tab:
         st.header(header)
-        id_code = st.text_input(f"Enter Participant ID({activity}):").strip()
 
-        if id_code:
-            participant_row = get_participant(id_code)
+        # Remember last entered ID per tab
+        if f"{activity}_id" not in st.session_state:
+            st.session_state[f"{activity}_id"] = ""
+        id_code = st.text_input(f"Enter Participant ID ({activity}):", st.session_state[f"{activity}_id"])
+        st.session_state[f"{activity}_id"] = id_code.strip()
 
-            if not participant_row.empty:
-                participant = participant_row.iloc[0]
-                participant_name = participant["Name"]
+        if not id_code:
+            return
 
-                # Unique key per participant/action for session_state
-                toast_key = f"{activity}_{id_code}"
+        participant_row = get_participant(id_code)
 
-                # Info toast (found participant)
-                if toast_key + "_info" not in st.session_state:
-                    st.session_state[toast_key + "_info"] = True
-                    auto_dismiss_message(
-                        f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
-                        "info"
-                    )
+        if participant_row.empty:
+            toast_key = f"{activity}_{id_code}_notfound"
+            auto_dismiss_message(toast_key, "❌ Participant not found.", "error")
+            return
 
-                # Validate action
-                status, msg = validate_action(participant, activity)
-                if status == "invalid_day":
-                    if toast_key + "_error" not in st.session_state:
-                        st.session_state[toast_key + "_error"] = True
-                        auto_dismiss_message(f"You are not assigned for today ({datetime.today().strftime('%Y-%m-%d')}).", "error")
-                elif status == "already":
-                    if toast_key + "_warn" not in st.session_state:
-                        st.session_state[toast_key + "_warn"] = True
-                        auto_dismiss_message(f"This action has already been recorded for {activity}.", "warning")
+        participant = participant_row.iloc[0]
+        participant_name = participant["Name"]
+        toast_key = f"{activity}_{id_code}"
 
-                else:
-                    # Button for valid action
-                    if st.button(button_label):
-                        df = load_data()
-                        df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
-                        df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        if save_data(df, f"{activity} for {participant_name}"):
-                            load_data.clear()
-                            if toast_key + "_success" not in st.session_state:
-                                st.session_state[toast_key + "_success"] = True
-                                auto_dismiss_message(f"{participant_name}'s {button_label} has been successfully recorded.", "success")
+        # Info toast
+        auto_dismiss_message(toast_key + "_info",
+                             f"👤 Participant found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
+                             "info")
 
-            else:
-                # Participant not found
-                toast_key = f"{activity}_{id_code}_notfound"
-                if toast_key not in st.session_state:
-                    st.session_state[toast_key] = True
-                    auto_dismiss_message("Participant not found.", "error")
+        # Validate
+        status, msg = validate_action(participant, activity)
+        if status == "invalid_day":
+            auto_dismiss_message(toast_key + "_error", msg, "error")
+        elif status == "already":
+            auto_dismiss_message(toast_key + "_warn", msg, "warning")
+        else:
+            if st.button(button_label):
+                df = load_data()
+                df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
+                df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                if save_data(df, f"{activity} for {participant_name}"):
+                    load_data.clear()
+                    auto_dismiss_message(toast_key + "_success",
+                                         f"✅ {participant_name}'s {button_label} has been successfully recorded.",
+                                         "success")
 
+# --- Main Tabs ---
+tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"])
 
-# --- Bus Check-in Tab ---
-handle_action(
-    tab1, "🚌 Bus Check-in", "Bus Check-in",
-    "Check-in for Bus", "Bus Check-in", "Bus Check-in", "Bus Timestamp"
-)
+handle_action(tab1, "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
+handle_action(tab2, "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
+handle_action(tab3, "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
 
-# --- Food Collection Tab ---
-handle_action(
-    tab2, "🍽 Food Collection", "Food Collection",
-    "Collect Food", "Food Collection", "Food Collection", "Food Timestamp"
-)
-
-# --- Overrides Tab ---
-handle_action(
-    tab3, "🔑 Overrides", "Override",
-    "Apply Override", "Override", "Override", "Override Timestamp"
-)
-
-            
 # --- Dashboard Tab ---
 with tab4:
     st.header("📊 Dashboard")
@@ -212,9 +162,3 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
-
-
-
-
-
-
