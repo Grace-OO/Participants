@@ -100,7 +100,7 @@ def auto_dismiss_message(message, msg_type="success"):
 def handle_action(tab, header, activity, button_label, field_name, df_field, timestamp_field):
     with tab:
         st.header(header)
-        id_code = st.text_input(f"Enter Participant ID:({activity}):").strip()
+        id_code = st.text_input(f"Enter Participant ID({activity}):").strip()
 
         if id_code:
             participant_row = get_participant(id_code)
@@ -174,6 +174,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
