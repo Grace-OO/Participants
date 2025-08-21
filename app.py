@@ -134,10 +134,10 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
 # --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
-# Initialize active tab
-if "active_tab" not in st.session_state:
+# Initialize active tab safely
+if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]  # default to first tab
-
+    
 # Radio buttons to select tab
 st.session_state.active_tab = st.radio(
     "Select Section",
@@ -176,3 +176,4 @@ elif st.session_state.active_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
