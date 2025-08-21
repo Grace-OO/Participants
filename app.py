@@ -68,7 +68,7 @@ def validate_action(participant_row, action_col):
         val = participant_row.get(col, "")
         if pd.notna(val) and val != "":
             # Handle comma-separated values in any cell
-            assigned_days.extend([d.strip() for d in str(val).split(",") if d.strip()])
+            assigned_days.extend([d.strip() for d in str(val).split(" ") if d.strip()])
     
     # Today's date
     today_day = datetime.today().strftime("%Y-%m-%d")
@@ -174,3 +174,4 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
