@@ -1,7 +1,7 @@
-ID Code,Name,Assigned Day,Bus Check-in,Timestamp,Food Collection,Food Timestamp,Override ,Override Timestamp,Bus Timestamp
-A5K7F9,Person A,2025-08-21,Yes,,Yes,2025-08-21 08:36:02,,,2025-08-21 08:34:58
-B9P4J8,Person B,2025-08-21,,,,,,,
-C5R4Y7,Person C,2025-08-22,,,,,,,
-D4F6M8,Person D,2025-08-20 2025-08-21,Yes,,Yes,2025-08-21 08:40:35,,,2025-08-21 08:40:03
-E3B5N0,Person E,2025-08-20,,,,,,,
-F2Q7V9,Person F,2025-08-21 2025-08-22,Yes,,Yes,2025-08-21 08:42:58,,,2025-08-21 08:42:33
+ID Code,Name,Assigned Day,Bus Check-in,Timestamp,Food Collection,Food Timestamp,Override ,Override Timestamp,Bus Timestamp,Override
+A5K7F9,Person A,2025-08-21,Yes,,Yes,2025-08-21 08:36:02,,,2025-08-21 08:34:58,
+B9P4J8,Person B,2025-08-21,,,,,,,,
+C5R4Y7,Person C,2025-08-22,,,,,,,,
+D4F6M8,Person D,2025-08-20 2025-08-21,Yes,,Yes,2025-08-21 08:40:35,,2025-08-21 09:00:00,2025-08-21 08:40:03,Yes
+E3B5N0,Person E,2025-08-20,,,,,,,,
+F2Q7V9,Person F,2025-08-21 2025-08-22,Yes,,Yes,2025-08-21 08:42:58,,,2025-08-21 08:42:33,
