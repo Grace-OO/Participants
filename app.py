@@ -138,12 +138,12 @@ tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Das
 if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]  # default to first tab
     
-# Radio buttons to select tab
-st.session_state.active_tab = st.radio(
+# Radio buttons control session state automatically
+selected_tab = st.radio(
     "Select Section",
     options=tabs,
-    index=tabs.index(st.session_state.active_tab),
-    horizontal=True  # looks like tabs
+    key="active_tab",  # <--- this automatically syncs with st.session_state
+    horizontal=True
 )
 
 # --- Display content based on selected tab ---
@@ -176,4 +176,5 @@ elif st.session_state.active_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
