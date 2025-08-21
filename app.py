@@ -102,7 +102,7 @@ if selected_tab == "Food Collection":
         st.success(msg)  # or st.warning/st.error depending on status
 
 # --- Toast helper ---
-def auto_dismiss_message_once(key, message, msg_type="success"):
+def auto_dismiss_message(key, message, msg_type="success"):
     if key not in st.session_state:
         st.session_state[key] = True  # mark as shown
         if msg_type == "success":
@@ -212,6 +212,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
