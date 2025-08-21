@@ -131,9 +131,23 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                                          f"✅ {participant_name}'s {button_label} has been successfully recorded.",
                                          "success")
 
-# --- Main Tabs ---
-tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"])
+# --- Tabs setup with session state ---
+tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
+# Initialize active tab
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = 0  # default to first tab
+
+# Create tabs with the last active tab restored
+tab_objs = st.tabs(tabs, index=st.session_state.active_tab)
+tab1, tab2, tab3, tab4 = tab_objs
+
+# --- Update active tab on any interaction ---
+for i, tab_name in enumerate(tabs):
+    if tab_objs[i]:
+        st.session_state.active_tab = i
+
+# --- Handle actions per tab ---
 handle_action(tab1, "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
 handle_action(tab2, "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
 handle_action(tab3, "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
@@ -162,3 +176,4 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
