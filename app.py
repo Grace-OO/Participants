@@ -4,6 +4,7 @@ from io import StringIO
 from datetime import datetime
 from github import Github
 import time
+from datetime import datetime
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -51,14 +52,31 @@ tab1, tab2, tab3, tab4 = st.tabs(["🚌 Bus Check-in", "🍽 Food Collection", "
 
 # Helper function: Check assigned day
 def validate_action(participant_row, action_col):
-    # Assigned days may be a list (comma-separated string)
-    assigned_days = str(participant_row.get("Assigned Day", "")).split(",")
-    assigned_days = [d.strip() for d in assigned_days if d.strip()]
-
+    # Map each action to the relevant assigned columns
+    action_to_columns = {
+        'Bus Check-in': ['Assigned Day', 'Bus Check-in'],
+        'Food Collection': ['Assigned Day', 'Food Collection'],
+        'Override': ['Override'],
+    }
+    
+    # Get the relevant columns for the action
+    relevant_columns = action_to_columns.get(action_col, ['Assigned Day'])
+    
+    # Combine all relevant assigned dates into a single list, ignoring empty values
+    assigned_days = []
+    for col in relevant_columns:
+        val = participant_row.get(col, "")
+        if pd.notna(val) and val != "":
+            # Handle comma-separated values in any cell
+            assigned_days.extend([d.strip() for d in str(val).split(",") if d.strip()])
+    
+    # Today's date
     today_day = datetime.today().strftime("%Y-%m-%d")
-
+    
+    # Check if action is already done
     already_done = participant_row.get(action_col, "No") == "Yes"
-
+    
+    # Validation logic
     if assigned_days and today_day not in assigned_days and action_col != "Override":
         return "invalid_day", f"❌ Not assigned for today ({today_day})."
     elif already_done:
@@ -156,6 +174,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
