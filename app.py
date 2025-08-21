@@ -84,17 +84,35 @@ def validate_action(participant_row, action_col):
     else:
         return "ok", f"✅ Allowed to proceed with {action_col}."
 
-# --- Toast helper ---
-def auto_dismiss_message(message, msg_type="success"):
-    if msg_type == "success":
-        st.toast(f"{message}", icon="✅")
-    elif msg_type == "error":
-        st.toast(f"{message}", icon="❌")
-    elif msg_type == "warning":
-        st.toast(f"{message}", icon="⚠️")
-    elif msg_type == "info":
-        st.toast(f"{message}", icon="ℹ️")
+# Persistent tab state
+if "current_tab" not in st.session_state:
+    st.session_state.current_tab = "Bus Check-in"
 
+tabs = ["Bus Check-in", "Food Collection", "Overrides"]
+selected_tab = st.radio("Select tab", tabs, index=tabs.index(st.session_state.current_tab))
+st.session_state.current_tab = selected_tab
+
+# Example participant row
+participant_row = {"Assigned Day": "2025-08-21 2025-08-22", "Food Collection": "No"}
+
+# Tab content
+if selected_tab == "Food Collection":
+    if st.button("Validate Food Collection"):
+        status, msg = validate_action(participant_row, "Food Collection")
+        st.success(msg)  # or st.warning/st.error depending on status
+
+# --- Toast helper ---
+def auto_dismiss_message_once(key, message, msg_type="success"):
+    if key not in st.session_state:
+        st.session_state[key] = True  # mark as shown
+        if msg_type == "success":
+            st.toast(f"{message}", icon="✅")
+        elif msg_type == "error":
+            st.toast(f"{message}", icon="❌")
+        elif msg_type == "warning":
+            st.toast(f"{message}", icon="⚠️")
+        elif msg_type == "info":
+            st.toast(f"{message}", icon="ℹ️")
 
 # --- Action Handler Helper ---
 def handle_action(tab, header, activity, button_label, field_name, df_field, timestamp_field):
@@ -109,27 +127,47 @@ def handle_action(tab, header, activity, button_label, field_name, df_field, tim
                 participant = participant_row.iloc[0]
                 participant_name = participant["Name"]
 
-                auto_dismiss_message(
-                    f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
-                    "info"
-                )
+                # Unique key per participant/action for session_state
+                toast_key = f"{activity}_{id_code}"
 
+                # Info toast (found participant)
+                if toast_key + "_info" not in st.session_state:
+                    st.session_state[toast_key + "_info"] = True
+                    auto_dismiss_message(
+                        f"👤 Found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
+                        "info"
+                    )
+
+                # Validate action
                 status, msg = validate_action(participant, activity)
                 if status == "invalid_day":
-                    auto_dismiss_message(msg, "error")
+                    if toast_key + "_error" not in st.session_state:
+                        st.session_state[toast_key + "_error"] = True
+                        auto_dismiss_message(f"You are not assigned for today ({datetime.today().strftime('%Y-%m-%d')}).", "error")
                 elif status == "already":
-                    auto_dismiss_message(msg, "warning")
+                    if toast_key + "_warn" not in st.session_state:
+                        st.session_state[toast_key + "_warn"] = True
+                        auto_dismiss_message(f"This action has already been recorded for {activity}.", "warning")
+
                 else:
+                    # Button for valid action
                     if st.button(button_label):
                         df = load_data()
                         df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
                         df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         if save_data(df, f"{activity} for {participant_name}"):
                             load_data.clear()
-                            auto_dismiss_message(f"{participant_name} {button_label}", "success")
+                            if toast_key + "_success" not in st.session_state:
+                                st.session_state[toast_key + "_success"] = True
+                                auto_dismiss_message(f"{participant_name}'s {button_label} has been successfully recorded.", "success")
 
             else:
-                auto_dismiss_message("Participant not found.", "error")
+                # Participant not found
+                toast_key = f"{activity}_{id_code}_notfound"
+                if toast_key not in st.session_state:
+                    st.session_state[toast_key] = True
+                    auto_dismiss_message("Participant not found.", "error")
+
 
 # --- Bus Check-in Tab ---
 handle_action(
@@ -174,6 +212,7 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
