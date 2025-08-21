@@ -131,34 +131,34 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                                          f"✅ {participant_name}'s {button_label} has been successfully recorded.",
                                          "success")
 
-# --- Tabs setup with session state ---
+# --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
 # Initialize active tab
 if "active_tab" not in st.session_state:
-    st.session_state.active_tab = 0  # default to first tab
+    st.session_state.active_tab = tabs[0]  # default to first tab
 
-# Create tabs with the last active tab restored
-tab_objs = st.tabs(tabs, index=st.session_state.active_tab)
-tab1, tab2, tab3, tab4 = tab_objs
+# Radio buttons to select tab
+st.session_state.active_tab = st.radio(
+    "Select Section",
+    options=tabs,
+    index=tabs.index(st.session_state.active_tab),
+    horizontal=True  # looks like tabs
+)
 
-# --- Update active tab on any interaction ---
-for i, tab_name in enumerate(tabs):
-    if tab_objs[i]:
-        st.session_state.active_tab = i
-
-# --- Handle actions per tab ---
-handle_action(tab1, "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
-handle_action(tab2, "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
-handle_action(tab3, "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
-
-# --- Dashboard Tab ---
-with tab4:
+# --- Display content based on selected tab ---
+if st.session_state.active_tab == "🚌 Bus Check-in":
+    handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
+elif st.session_state.active_tab == "🍽 Food Collection":
+    handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
+elif st.session_state.active_tab == "🔑 Overrides":
+    handle_action(st.container(), "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
+elif st.session_state.active_tab == "📊 Dashboard":
     st.header("📊 Dashboard")
     df_latest = load_data()
     st.dataframe(df_latest)
 
-    # Add download button
+    # Download button
     csv_data = df_latest.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="⬇️ Download CSV",
@@ -176,4 +176,3 @@ with tab4:
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
-
