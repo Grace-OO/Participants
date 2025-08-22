@@ -99,12 +99,12 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
 
         id_code = st.text_input(
             f"Enter Participant ID ({activity}):",
-            st.session_state[f"{activity}_id"],
+            value=st.session_state[f"{activity}_id"],   # ✅ shadow state drives the widget
             key=f"{activity}_input",
             placeholder="Type ID...",
             label_visibility="visible"
         )
-        st.session_state[f"{activity}_id"] = id_code.strip()
+        st.session_state[f"{activity}_id"] = id_code.strip() 
 
         if not id_code:
             return
@@ -146,8 +146,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                     "success"
                 )
                 # Clear input BEFORE rerun → avoids duplicate "already" warning
-                st.session_state[f"{activity}_id"] = ""
-                st.session_state[f"{activity}_input"] = ""   # clear the actual widget key
+                st.session_state[f"{activity}_id"] = ""   # ✅ only reset shadow state
                 st.rerun()
 
 # --- Mimic tabs using radio buttons ---
@@ -195,6 +194,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
