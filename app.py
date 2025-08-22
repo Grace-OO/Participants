@@ -101,7 +101,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
             f"Enter Participant ID ({activity}):",
             st.session_state[f"{activity}_id"],
             key=f"{activity}_input",
-            placeholder="Scan or type ID...",
+            placeholder="Type ID...",
             label_visibility="visible"
         )
         st.session_state[f"{activity}_id"] = id_code.strip()
@@ -195,4 +195,5 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
