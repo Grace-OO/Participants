@@ -145,9 +145,8 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                     f"✅ {participant_name}'s {button_label} has been automatically recorded.",
                     "success"
                 )
-                # Clear input BEFORE rerun → avoids duplicate "already" warning
-                st.session_state[f"{activity}_id"] = ""   # ✅ only reset shadow state
-                st.rerun()
+                st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
+               
 
 # --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
@@ -194,6 +193,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
