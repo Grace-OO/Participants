@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-REPO_NAME = st.secrets["GITHUB_REPO"]  # e.g., "your-username/your-repo"
+REPO_NAME = st.secrets["GITHUB_REPO"]  
 FILE_PATH = "test_run.csv"
 
 g = Github(GITHUB_TOKEN)
@@ -79,11 +79,11 @@ def validate_action(participant_row, action_col):
     already_done = participant_row.get(action_col, "No") == "Yes"
 
     if assigned_days and today_day not in assigned_days and action_col != "Override":
-        return "invalid_day", f"❌ You are not assigned for today ({today_day})."
+        return "invalid_day", f"You are not assigned for today ({today_day})."
     elif already_done:
-        return "already", f"⚠️ This action has already been recorded for {action_col}."
+        return "already", f"This action has already been recorded for {action_col}."
     else:
-        return "ok", f"✅ You may proceed with {action_col}."
+        return "ok", f"You may proceed with {action_col}."
 
 # --- Action handler
 # Define timezone (Nigeria UTC+1, adjust if needed)
@@ -113,7 +113,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
 
         if participant_row.empty:
             toast_key = f"{activity}_{id_code}_notfound"
-            auto_dismiss_message(toast_key, "❌ Participant not found.", "error")
+            auto_dismiss_message(toast_key, "Participant not found.", "error")
             return
 
         participant = participant_row.iloc[0]
@@ -145,9 +145,8 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                     f"✅ {participant_name}'s {button_label} has been automatically recorded.",
                     "success"
                 )
-                # 🔑 Clear input BEFORE rerun → avoids duplicate "already" warning
+                # Clear input BEFORE rerun → avoids duplicate "already" warning
                 st.session_state[f"{activity}_id"] = ""
-                st.session_state[f"{activity}_input"] = ""
                 st.rerun()
 
 # --- Mimic tabs using radio buttons ---
@@ -195,5 +194,6 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
