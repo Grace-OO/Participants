@@ -4,7 +4,8 @@ from io import StringIO
 from datetime import datetime
 from github import Github
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
@@ -85,14 +86,24 @@ def validate_action(participant_row, action_col):
         return "ok", f"✅ You may proceed with {action_col}."
 
 # --- Action handler
+# Define timezone (Nigeria UTC+1, adjust if needed)
+LOCAL_TZ = timezone(timedelta(hours=1))
+
 def handle_action(tab, header, activity, button_label, df_field, timestamp_field):
     with tab:
         st.header(header)
 
-        # Remember last entered ID per tab
+        # Keep a session key for the input
         if f"{activity}_id" not in st.session_state:
             st.session_state[f"{activity}_id"] = ""
-        id_code = st.text_input(f"Enter Participant ID ({activity}):", st.session_state[f"{activity}_id"])
+
+        id_code = st.text_input(
+            f"Enter Participant ID ({activity}):",
+            st.session_state[f"{activity}_id"],
+            key=f"{activity}_input",
+            placeholder="Scan or type ID...",
+            label_visibility="visible"
+        )
         st.session_state[f"{activity}_id"] = id_code.strip()
 
         if not id_code:
@@ -110,9 +121,11 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         toast_key = f"{activity}_{id_code}"
 
         # Info toast
-        auto_dismiss_message(toast_key + "_info",
-                             f"👤 Participant found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
-                             "info")
+        auto_dismiss_message(
+            toast_key + "_info",
+            f"👤 Participant found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
+            "info"
+        )
 
         # Validate
         status, msg = validate_action(participant, activity)
@@ -121,15 +134,18 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         elif status == "already":
             auto_dismiss_message(toast_key + "_warn", msg, "warning")
         else:
-            # ✅ Auto-log immediately (no button required)
+            # ✅ Auto-log immediately with correct timezone
             df = load_data()
             df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
-            df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
             if save_data(df, f"{activity} for {participant_name}"):
                 load_data.clear()
-                auto_dismiss_message(toast_key + "_success",
-                                     f"✅ {participant_name}'s {button_label} has been automatically recorded.",
-                                     "success")
+                auto_dismiss_message(
+                    toast_key + "_success",
+                    f"✅ {participant_name}'s {button_label} has been automatically recorded.",
+                    "success"
+                )
+                # 🔑 Clear input BEFORE rerun → avoids duplicate "already" warning
                 st.session_state[f"{activity}_id"] = ""
                 st.session_state[f"{activity}_input"] = ""
                 st.rerun()
@@ -179,3 +195,4 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
