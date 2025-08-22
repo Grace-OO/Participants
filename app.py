@@ -86,7 +86,7 @@ def validate_action(participant_row, action_col):
         return "ok", f"You may proceed with {action_col}."
 
 # --- Action handler
-# Define timezone (Nigeria UTC+1, adjust if needed)
+# Define timezone
 LOCAL_TZ = timezone(timedelta(hours=1))
 
 def handle_action(tab, header, activity, button_label, df_field, timestamp_field):
@@ -147,6 +147,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 )
                 # Clear input BEFORE rerun → avoids duplicate "already" warning
                 st.session_state[f"{activity}_id"] = ""
+                st.session_state[f"{activity}_input"] = ""   # clear the actual widget key
                 st.rerun()
 
 # --- Mimic tabs using radio buttons ---
@@ -194,6 +195,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
