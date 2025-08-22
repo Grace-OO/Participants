@@ -84,7 +84,7 @@ def validate_action(participant_row, action_col):
     else:
         return "ok", f"✅ You may proceed with {action_col}."
 
-# --- Action handler ---
+# --- Action handler
 def handle_action(tab, header, activity, button_label, df_field, timestamp_field):
     with tab:
         st.header(header)
@@ -121,15 +121,18 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         elif status == "already":
             auto_dismiss_message(toast_key + "_warn", msg, "warning")
         else:
-            if st.button(button_label):
-                df = load_data()
-                df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
-                df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                if save_data(df, f"{activity} for {participant_name}"):
-                    load_data.clear()
-                    auto_dismiss_message(toast_key + "_success",
-                                         f"✅ {participant_name}'s {button_label} has been successfully recorded.",
-                                         "success")
+            # ✅ Auto-log immediately (no button required)
+            df = load_data()
+            df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
+            df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if save_data(df, f"{activity} for {participant_name}"):
+                load_data.clear()
+                auto_dismiss_message(toast_key + "_success",
+                                     f"✅ {participant_name}'s {button_label} has been automatically recorded.",
+                                     "success")
+                st.session_state[f"{activity}_id"] = ""
+                st.session_state[f"{activity}_input"] = ""
+                st.rerun()
 
 # --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
