@@ -58,7 +58,10 @@ def auto_dismiss_message(key, message, msg_type="success"):
 # --- Get participant by ID ---
 def get_participant(id_code):
     df_latest = load_data()
-    return df_latest[df_latest["ID Code"].astype(str).str.lower() == str(id_code).lower()]
+    return df_latest[
+        df_latest["ID Code"].astype(str).str.strip().str.lower()
+        == str(id_code).strip().lower()
+    ]
 
 # --- Validation function ---
 def validate_action(participant_row, action_col):
@@ -102,7 +105,8 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
             key=f"{activity}_input",
             placeholder="Type ID...",
             label_visibility="visible"
-        )
+        ).strip().lower()
+        
         st.session_state[f"{activity}_id"] = id_code.strip() 
 
         submit = st.button("Enter", key=f"{activity}_submit")
@@ -203,4 +207,5 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Overrides", int(override_count))
+
 
