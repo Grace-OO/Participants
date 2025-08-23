@@ -38,7 +38,7 @@ def save_data(df, commit_msg="Update check-in"):
                 return False
 
 # --- Streamlit UI ---
-st.title("🎟 Conference Participants Tracker")
+st.header("🎟 Conference Participants Tracker")
 
 df = load_data()
 
@@ -107,7 +107,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
 
         submit = st.button("Enter", key=f"{activity}_submit")
 
-        st.header(header)
+        st.subheader(header)
 
         # --- Allow either keyboard enter (id_code filled) OR button press ---
         if not id_code:  
@@ -200,6 +200,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
