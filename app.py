@@ -169,6 +169,9 @@ selected_tab = st.radio(
     horizontal=True
 )
 
+# --- Always have the latest data available ---
+df_latest = load_data()
+
 # --- Display content based on selected tab ---
 if selected_tab == "🚌 Bus Check-in":
     handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
@@ -199,15 +202,3 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Overrides", int(override_count))
-
-
-
-
-
-
-
-
-
-
-
-
