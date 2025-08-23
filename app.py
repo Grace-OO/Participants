@@ -58,7 +58,7 @@ def auto_dismiss_message(key, message, msg_type="success"):
 # --- Get participant by ID ---
 def get_participant(id_code):
     df_latest = load_data()
-    return df_latest[df_latest["ID Code"].astype(str) == str(id_code)]
+    return df_latest[df_latest["ID Code"].astype(str).str.lower() == str(id_code).lower()]
 
 # --- Validation function ---
 def validate_action(participant_row, action_col):
@@ -143,8 +143,9 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         else:
             # ✅ Auto-log immediately with correct timezone
             df = load_data()
-            df.loc[df["ID Code"].astype(str) == id_code, df_field] = "Yes"
-            df.loc[df["ID Code"].astype(str) == id_code, timestamp_field] = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
+            mask = df["ID Code"].astype(str).str.lower() == id_code.lower()
+            df.loc[mask, df_field] = "Yes"
+            df.loc[mask, timestamp_field] = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
             if save_data(df, f"{activity} for {participant_name}"):
                 load_data.clear()
                 auto_dismiss_message(
@@ -202,3 +203,4 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Overrides", int(override_count))
+
