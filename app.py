@@ -104,7 +104,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
 
         id_code = st.text_input(
             f"Enter Participant ID ({activity}):",
-            value=st.session_state[f"{activity}_id"],   # ✅ shadow state drives the widget
+            value=st.session_state[f"{activity}_id"],   # shadow state drives the widget
             key=f"{activity}_input",
             placeholder="Type ID...",
             label_visibility="visible"
@@ -122,7 +122,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         if not submit and not st.session_state[f"{activity}_id"]:  
             return
 
-        # ✅ At this point, works with keyboard Enter OR button click
+        # Works with keyboard Enter OR button click
         participant_row = get_participant(id_code)
         if participant_row.empty:
             toast_key = f"{activity}_{id_code}_notfound"
@@ -148,7 +148,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         elif status == "already":
             auto_dismiss_message(toast_key + "_warn", msg, "warning")
         else:
-            # ✅ Auto-log immediately with correct timezone
+            # Auto-log immediately with correct timezone
             df = load_data()
             mask = df["ID Code"].astype(str).str.strip().str.lower() == id_code.strip().lower()
             df.loc[mask, df_field] = "Yes"
@@ -206,6 +206,6 @@ food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").s
 override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
 col1, col2, col3 = st.columns(3)
-col1.metric(int(bus_count), "Bus Check-ins")
-col2.metric(int(food_count), "Food Collections")
-col3.metric(int(override_count), "Overrides")
+col1.metric("Bus Check-ins", int(bus_count))
+col2.metric("Food Collections", int(food_count))
+col3.metric("Overrides", int(override_count))
