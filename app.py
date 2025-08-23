@@ -91,7 +91,6 @@ LOCAL_TZ = timezone(timedelta(hours=1))
 
 def handle_action(tab, header, activity, button_label, df_field, timestamp_field):
     with tab:
-        st.header(header)
 
         # Keep a session key for the input
         if f"{activity}_id" not in st.session_state:
@@ -147,7 +146,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 )
                 st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
                
-
+        st.header(header)
 # --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
@@ -193,6 +192,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
