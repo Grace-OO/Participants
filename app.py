@@ -105,11 +105,18 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         )
         st.session_state[f"{activity}_id"] = id_code.strip() 
 
-        if not id_code:
+        submit = st.button("Enter", key=f"{activity}_submit")
+
+        st.header(header)
+
+        # --- Allow either keyboard enter (id_code filled) OR button press ---
+        if not id_code:  
+            return
+        if not submit and not st.session_state[f"{activity}_id"]:  
             return
 
+        # ✅ At this point, works with keyboard Enter OR button click
         participant_row = get_participant(id_code)
-
         if participant_row.empty:
             toast_key = f"{activity}_{id_code}_notfound"
             auto_dismiss_message(toast_key, "Participant not found.", "error")
@@ -118,7 +125,8 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         participant = participant_row.iloc[0]
         participant_name = participant["Name"]
         toast_key = f"{activity}_{id_code}"
-
+        
+        
         # Info toast
         auto_dismiss_message(
             toast_key + "_info",
@@ -146,7 +154,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 )
                 st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
                
-        st.header(header)
+    st.header(header)
 # --- Mimic tabs using radio buttons ---
 tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
@@ -192,6 +200,7 @@ elif selected_tab == "📊 Dashboard":
     col1.metric("Bus Check-ins", int(bus_count))
     col2.metric("Food Collections", int(food_count))
     col3.metric("Overrides", int(override_count))
+
 
 
 
