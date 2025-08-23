@@ -206,10 +206,6 @@ food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").s
 override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Bus Check-ins", int(bus_count))
-col2.metric("Food Collections", int(food_count))
-col3.metric("Overrides", int(override_count))
-
-
-
-
+col1.metric(int(bus_count), "Bus Check-ins")
+col2.metric(int(food_count), "Food Collections")
+col3.metric(int(override_count), "Overrides")
