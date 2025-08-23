@@ -155,6 +155,16 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
                
     st.header(header)
+# --- Mimic tabs using radio buttons ---
+tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
+
+if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
+    st.session_state.active_tab = tabs[0]
+
+# Create a placeholder for the radio (renders later)
+radio_placeholder = st.empty()
+
+selected_tab = st.session_state.active_tab 
 
 # --- Display content based on selected tab ---
 if selected_tab == "🚌 Bus Check-in":
@@ -177,21 +187,16 @@ elif selected_tab == "📊 Dashboard":
         mime="text/csv",
     )
 
-# --- Mimic tabs using radio buttons ---
-tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
 
-# Initialize active tab safely
-if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
-    st.session_state.active_tab = tabs[0]  # default to first tab
-    
-# Radio buttons control session state automatically
-selected_tab = st.radio(
+# --- Now render radio at the bottom ---
+selected_tab = radio_placeholder.radio(
     "Select Section",
     options=tabs,
-    key="active_tab",  # <--- this automatically syncs with st.session_state
+    key="active_tab",
     horizontal=True
 )
-    # Metrics
+
+# Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
 food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
 override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
@@ -200,6 +205,7 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Overrides", int(override_count))
+
 
 
 
