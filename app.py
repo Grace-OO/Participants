@@ -160,11 +160,14 @@ tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Das
 
 if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]
-
-# Create a placeholder for the radio (renders later)
-radio_placeholder = st.empty()
-
-selected_tab = st.session_state.active_tab 
+    
+# Radio buttons control session state automatically 
+selected_tab = st.radio(
+    "Select Section",
+    options=tabs,
+    key="active_tab",
+    horizontal=True
+)
 
 # --- Display content based on selected tab ---
 if selected_tab == "🚌 Bus Check-in":
@@ -187,15 +190,6 @@ elif selected_tab == "📊 Dashboard":
         mime="text/csv",
     )
 
-
-# --- Now render radio at the bottom ---
-selected_tab = radio_placeholder.radio(
-    "Select Section",
-    options=tabs,
-    key="active_tab",
-    horizontal=True
-)
-
 # Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
 food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
@@ -205,6 +199,7 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Overrides", int(override_count))
+
 
 
 
