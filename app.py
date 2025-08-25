@@ -71,6 +71,7 @@ def validate_action(participant_row, action_col):
     action_to_columns = {
         'Bus Check-in': ['Assigned Day', 'Bus Check-in'],
         'Food Collection': ['Assigned Day', 'Food Collection'],
+        'Return Trip': ['Assigned Day', 'Return Trip'],
         'Override': ['Override'],
     }
     relevant_columns = action_to_columns.get(action_col, ['Assigned Day'])
@@ -163,7 +164,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
                
 # --- Mimic tabs using radio buttons ---
-tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "🔑 Overrides", "📊 Dashboard"]
+tabs = ["🚌 Bus Check-in", "🍽 Food Collection","🚍 Return Trip", "🔑 Overrides", "📊 Dashboard"]
 
 if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]
@@ -184,6 +185,8 @@ if selected_tab == "🚌 Bus Check-in":
     handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
 elif selected_tab == "🍽 Food Collection":
     handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
+elif selected_tab == "🚍 Return Trip":
+    handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Bus Timestamp")
 elif selected_tab == "🔑 Overrides":
     handle_action(st.container(), "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
 elif selected_tab == "📊 Dashboard":
@@ -203,9 +206,11 @@ elif selected_tab == "📊 Dashboard":
 # Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
 food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
+return_count = (df_latest.get("Return Trip", pd.Series(dtype=str)) == "Yes").sum()
 override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
-col3.metric("Overrides", int(override_count))
+col3.metric("Return Trip", int(return_count))
+col4.metric("Overrides", int(override_count))
