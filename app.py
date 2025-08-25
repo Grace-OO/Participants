@@ -186,7 +186,7 @@ if selected_tab == "🚌 Bus Check-in":
 elif selected_tab == "🍽 Food Collection":
     handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
 elif selected_tab == "🚍 Return Trip":
-    handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Bus Timestamp")
+    handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Return Timestamp")
 elif selected_tab == "🔑 Overrides":
     handle_action(st.container(), "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
 elif selected_tab == "📊 Dashboard":
@@ -214,3 +214,4 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
 col3.metric("Return Trip", int(return_count))
 col4.metric("Overrides", int(override_count))
+
