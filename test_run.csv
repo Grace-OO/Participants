@@ -1,5 +1,5 @@
 ID Code,Name,Assigned Day,Bus Check-in,Bus Timestamp,Food Collection,Food Timestamp,Return Trip,Return Timestamp,Override,Override Timestamp
-A5K7F9,Person A,2025-08-25,,2025-08-25 09:04:09,,,Yes,,,
+A5K7F9,Person A,2025-08-25,,,,,,,,
 B9P4J8,Person B,2025-08-25,,,,,,,,
 C5R4Y7,Person C,2025-08-24,,,,,,,,
 D4F6M8,Person D,2025-08-25 2025-08-26,,,,,,,,
