@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 from io import StringIO
-from datetime import datetime
 from github import Github
+import base64
+import requests
 import time
 from datetime import datetime, timezone, timedelta
 
@@ -18,18 +19,42 @@ repo = g.get_repo(REPO_NAME)
 # --- Helper: load CSV from GitHub ---
 @st.cache_data(ttl=5)
 def load_data():
-    file_content = repo.get_contents(FILE_PATH)
-    return pd.read_csv(StringIO(file_content.decoded_content.decode()))
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    content = r.json()
+    csv_content = base64.b64decode(content["content"]).decode("utf-8")
+    return pd.read_csv(StringIO(csv_content))
 
 # --- Helper: save CSV to GitHub with retry ---
 def save_data(df, commit_msg="Update check-in"):
-    csv_data = df.to_csv(index=False)
-    retries = 3
+    new_csv = df.to_csv(index=False)
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+
+    retries = 4
     for attempt in range(retries):
         try:
-            file_content = repo.get_contents(FILE_PATH)  # get fresh SHA
-            repo.update_file(FILE_PATH, commit_msg, csv_data, file_content.sha)
-            return True
+            # Get file SHA (needed for update)
+            r = requests.get(url, headers=headers)
+            r.raise_for_status()
+            sha = r.json()["sha"]
+
+            update_data = {
+                "message": commit_msg,
+                "content": base64.b64encode(new_csv.encode()).decode(),
+                "sha": sha,
+                "branch": "main"  # change if your default branch is not main
+            }
+
+            r = requests.put(url, headers=headers, json=update_data)
+
+            if r.status_code in (200, 201):
+                return True
+            else:
+                raise Exception(r.json())
+
         except Exception as e:
             if attempt < retries - 1:
                 time.sleep(1.5)  # wait before retry
@@ -55,7 +80,6 @@ def auto_dismiss_message(key, message, msg_type="success"):
         elif msg_type == "info":
             st.toast(f"{message}", icon="ℹ️")
 
-# --- Get participant by ID ---
 
 # --- Get participant by ID ---
 def get_participant(id_code):
@@ -66,33 +90,6 @@ def get_participant(id_code):
     ]
 
 
-# --- Validation function ---
-def validate_action(participant_row, action_col):
-    action_to_columns = {
-        'Bus Check-in': ['Assigned Day', 'Bus Check-in'],
-        'Food Collection': ['Assigned Day', 'Food Collection'],
-        'Return Trip': ['Assigned Day', 'Return Trip'],
-        'Override': ['Override'],
-    }
-    relevant_columns = action_to_columns.get(action_col, ['Assigned Day'])
-
-    assigned_days = []
-    for col in relevant_columns:
-        val = participant_row.get(col, "")
-        if pd.notna(val) and val != "":
-            assigned_days.extend([d.strip() for d in str(val).split(" ") if d.strip()])
-
-    today_day = datetime.today().strftime("%Y-%m-%d")
-    already_done = participant_row.get(action_col, "No") == "Yes"
-
-    if assigned_days and today_day not in assigned_days and action_col != "Override":
-        return "invalid_day", f"You are not assigned for today ({today_day})."
-    elif already_done:
-        return "already", f"This action has already been recorded for {action_col}."
-    else:
-        return "ok", f"You may proceed with {action_col}."
-
-# --- Action handler
 # Define timezone
 LOCAL_TZ = timezone(timedelta(hours=1))
 
@@ -138,33 +135,36 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
         # Info toast
         auto_dismiss_message(
             toast_key + "_info",
-            f"👤 Participant found: {participant_name} (Assigned: {participant.get('Assigned Day', 'N/A')})",
+            f"👤 Participant found: {participant_name}",
             "info"
         )
 
         # Validate
-        status, msg = validate_action(participant, activity)
-        if status == "invalid_day":
-            auto_dismiss_message(toast_key + "_error", msg, "error")
-        elif status == "already":
-            auto_dismiss_message(toast_key + "_warn", msg, "warning")
-        else:
-            # Auto-log immediately with correct timezone
-            df = load_data()
-            mask = df["ID Code"].astype(str).str.strip().str.lower() == id_code.strip().lower()
-            df.loc[mask, df_field] = "Yes"
-            df.loc[mask, timestamp_field] = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
-            if save_data(df, f"{activity} for {participant_name}"):
-                load_data.clear()
-                auto_dismiss_message(
-                    toast_key + "_success",
-                    f"✅ {participant_name}'s {button_label} has been automatically recorded.",
-                    "success"
-                )
-                st.session_state[f"{activity}_id"] = ""   #  only reset shadow state
-               
+    if participant[df_field] == "Yes":
+        auto_dismiss_message(
+        toast_key + "_warn",
+        f"{participant_name} has already been recorded for {activity}.",
+        "warning"
+        )
+    else:
+    # Auto-log immediately with correct timezone
+        df = load_data()
+        mask = df["ID Code"].astype(str).str.strip().str.lower() == id_code.strip().lower()
+        df.loc[mask, df_field] = "Yes"
+        df.loc[mask, timestamp_field] = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        if save_data(df, f"{activity} for {participant_name}"):
+            load_data.clear()
+            auto_dismiss_message(
+                toast_key + "_success",
+                f"✅ {participant_name}'s {button_label} has been automatically recorded.",
+                "success"
+            )
+            st.session_state[f"{activity}_id"] = ""   
+
+        
+        
 # --- Mimic tabs using radio buttons ---
-tabs = ["🚌 Bus Check-in", "🍽 Food Collection","🚍 Return Trip", "🔑 Overrides", "📊 Dashboard"]
+tabs = ["📋 Conference Check-in", "🍽 Food Collection", "📊 Dashboard"]
 
 if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]
@@ -181,14 +181,10 @@ selected_tab = st.radio(
 df_latest = load_data()
 
 # --- Display content based on selected tab ---
-if selected_tab == "🚌 Bus Check-in":
-    handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
+if selected_tab == "📋 Conference Check-in":
+    handle_action(st.container(), "Conference Check-in", "Conference Check-in", "Check-in", "Conference Check-in", "Conference Timestamp")
 elif selected_tab == "🍽 Food Collection":
     handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
-elif selected_tab == "🚍 Return Trip":
-    handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Return Timestamp")
-elif selected_tab == "🔑 Overrides":
-    handle_action(st.container(), "Overrides", "Override", "Apply Override", "Override", "Override Timestamp")
 elif selected_tab == "📊 Dashboard":
     st.header("📊 Dashboard")
     df_latest = load_data()
@@ -204,14 +200,9 @@ elif selected_tab == "📊 Dashboard":
     )
 
 # Metrics
-bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
+conference_count = (df_latest.get("Conference Check-in", pd.Series(dtype=str)) == "Yes").sum()
 food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
-return_count = (df_latest.get("Return Trip", pd.Series(dtype=str)) == "Yes").sum()
-override_count = (df_latest.get("Override", pd.Series(dtype=str)) == "Yes").sum()
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Bus Check-ins", int(bus_count))
+col1, col2 = st.columns(2)
+col1.metric("Conference Check-ins", int(conference_count))
 col2.metric("Food Collections", int(food_count))
-col3.metric("Return Trip", int(return_count))
-col4.metric("Overrides", int(override_count))
-
