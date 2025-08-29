@@ -63,7 +63,7 @@ def save_data(df, commit_msg="Update check-in"):
                 return False
 
 # --- Streamlit UI ---
-st.header("🎟 GITEX'25 Conference Participants Tracker")
+st.header("🎟 GITEX '25 Conference Participants Tracker")
 
 df = load_data()
 
@@ -223,4 +223,5 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
+
 
