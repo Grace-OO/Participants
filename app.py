@@ -147,7 +147,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 load_data.clear()
                 auto_dismiss_message(
                 toast_key + "_success",
-                f"✅ {participant_name}'s {button_label} has been recorded.",
+                f"{participant_name}'s {button_label} has been recorded.",
                 "success"
                 )
                 st.session_state[f"{activity}_id"] = ""   
@@ -205,4 +205,5 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
+
 
