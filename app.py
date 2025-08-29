@@ -137,7 +137,7 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
             f"{participant_name} has already been recorded for {activity}.",
             "warning"
             )
-            else:
+        else:
     # Auto-log immediately with correct timezone
             df = load_data()
             mask = df["ID Code"].astype(str).str.strip().str.lower() == id_code.strip().lower()
@@ -205,3 +205,4 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
+
