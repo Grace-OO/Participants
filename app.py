@@ -63,7 +63,7 @@ def save_data(df, commit_msg="Update check-in"):
                 return False
 
 # --- Streamlit UI ---
-st.header("🎟 Conference Participants Tracker")
+st.header("🎟 GITEX'25 Conference Participants Tracker")
 
 df = load_data()
 
@@ -177,22 +177,40 @@ if selected_tab == "📋 Conference Check-in":
 elif selected_tab == "🚌 Bus Check-in":
     handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
 elif selected_tab == "🍽 Food Collection":
-    handle_action(st.container(), "Food Collection", "Food Collection", "Collect Food", "Food Collection", "Food Timestamp")
+    handle_action(st.container(), "Food Collection", "Food Collection", "Food collection", "Food Collection", "Food Timestamp")
 elif selected_tab == "🚍 Return Trip":
     handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Return Timestamp")
 elif selected_tab == "📊 Dashboard":
-    st.header("📊 Dashboard")
-    df_latest = load_data()
-    st.dataframe(df_latest)
+    PASSWORD = st.secrets["auth"]["admin_password"]
 
-    # Download button
-    csv_data = df_latest.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="⬇️ Download CSV",
-        data=csv_data,
-        file_name="conference_checkins.csv",
-        mime="text/csv",
-    )
+    if "dashboard_ok" not in st.session_state:
+        st.session_state["dashboard_ok"] = False
+
+    if not st.session_state["dashboard_ok"]:
+        # Show password input only if not authenticated
+        pw = st.text_input("Enter Dashboard Password:", type="password", key="dash_pw")
+        if st.button("Unlock Dashboard"):
+            if pw == PASSWORD:
+                st.session_state["dashboard_ok"] = True
+                st.success("✅ Access granted")
+                st.experimental_rerun()
+            else:
+                st.error("❌ Wrong password")
+        st.stop()  # stop so Dashboard content doesn’t show
+    else:
+        # Protected Dashboard content (only shows after login)
+        st.header("📊 Dashboard")
+        df_latest = load_data()
+        st.dataframe(df_latest)
+
+        # Download button
+        csv_data = df_latest.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="⬇️ Download CSV",
+            data=csv_data,
+            file_name="conference_checkins.csv",
+            mime="text/csv",
+        )
 
 # Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
@@ -205,5 +223,3 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
-
-
