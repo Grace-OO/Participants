@@ -193,7 +193,7 @@ elif selected_tab == "📊 Dashboard":
             if pw == PASSWORD:
                 st.session_state["dashboard_ok"] = True
                 st.success("✅ Access granted")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("❌ Wrong password")
         st.stop()  # stop so Dashboard content doesn’t show
@@ -223,3 +223,4 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
+
