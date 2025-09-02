@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 REPO_NAME = st.secrets["GITHUB_REPO"]  
-FILE_PATH = "test_run.csv"
+FILE_PATH = "app_day_1.csv"
 
 g = Github(GITHUB_TOKEN)
 repo = g.get_repo(REPO_NAME)
@@ -223,5 +223,3 @@ col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Conference Check-ins", int(conference_count))
 col3.metric("Food Collections", int(food_count))
 col4.metric("Return Trip", int(return_count))
-
-
