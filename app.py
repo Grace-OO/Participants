@@ -183,34 +183,38 @@ elif selected_tab == "🚍 Return Trip":
 elif selected_tab == "📊 Dashboard":
     PASSWORD = st.secrets["auth"]["admin_password"]
 
+    # Initialize state
     if "dashboard_ok" not in st.session_state:
         st.session_state["dashboard_ok"] = False
 
+    # If not authenticated yet
     if not st.session_state["dashboard_ok"]:
-        # Show password input only if not authenticated
         pw = st.text_input("Enter Dashboard Password:", type="password", key="dash_pw")
+
         if st.button("Unlock Dashboard"):
             if pw == PASSWORD:
                 st.session_state["dashboard_ok"] = True
-                st.success("✅ Access granted")
+                st.success("✅ Access granted. You won’t need to re-enter unless you refresh the page.")
                 st.rerun()
             else:
                 st.error("❌ Wrong password")
-        st.stop()  # stop so Dashboard content doesn’t show
-    else:
-        # Protected Dashboard content (only shows after login)
-        st.header("📊 Dashboard")
-        df_latest = load_data()
-        st.dataframe(df_latest)
 
-        # Download button
-        csv_data = df_latest.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="⬇️ Download CSV",
-            data=csv_data,
-            file_name="conference_checkins.csv",
-            mime="text/csv",
-        )
+        st.stop()
+
+    # --- Protected Dashboard Section ---
+    st.header("📊 Dashboard")
+
+    df_latest = load_data()
+    st.dataframe(df_latest)
+
+    # Download button
+    csv_data = df_latest.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="⬇️ Download CSV",
+        data=csv_data,
+        file_name="conference_checkins.csv",
+        mime="text/csv",
+    )
 
 # Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
