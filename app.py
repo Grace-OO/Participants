@@ -9,7 +9,6 @@ import time
 from datetime import datetime, timezone, timedelta
 
 
-
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 REPO_NAME = st.secrets["GITHUB_REPO"]  
@@ -197,7 +196,7 @@ elif selected_tab == "📊 Dashboard":
 
     # --- Authentication gate ---
     if not st.session_state["dashboard_ok"]:
-        remember = st.checkbox("Remember after reload", value=True, key="dash_remember")
+        remember = st.checkbox("Remember me", value=True, key="dash_remember")
         pw = st.text_input("Enter Dashboard Password:", type="password", key="dash_pw")
 
         if st.button("Unlock Dashboard"):
@@ -240,4 +239,5 @@ food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").s
 col1, col2 = st.columns(2)
 col1.metric("Bus Check-ins", int(bus_count))
 col2.metric("Food Collections", int(food_count))
+
 
