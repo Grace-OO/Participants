@@ -4,14 +4,16 @@ from io import StringIO
 from github import Github
 import base64
 import requests
+import hashlib, hmac
 import time
 from datetime import datetime, timezone, timedelta
+
 
 
 # --- GitHub Setup ---
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 REPO_NAME = st.secrets["GITHUB_REPO"]  
-FILE_PATH = "app_day_1.csv"
+FILE_PATH = "app_day_2.csv"
 
 g = Github(GITHUB_TOKEN)
 repo = g.get_repo(REPO_NAME)
@@ -152,10 +154,14 @@ def handle_action(tab, header, activity, button_label, df_field, timestamp_field
                 )
                 st.session_state[f"{activity}_id"] = ""   
 
-        
+#remembers the password after refresh
+def _make_dash_token(secret: str, password: str) -> str:
+    """Create a short HMAC token (not the password) for URL storage."""
+    return hmac.new(secret.encode(), msg=f"dashboard:{password}".encode(),
+                    digestmod=hashlib.sha256).hexdigest()[:24]        
         
 # --- Mimic tabs using radio buttons ---
-tabs = ["🚌 Bus Check-in", "📋 Conference Check-in", "🍽 Food Collection", "🚍 Return Trip", "📊 Dashboard"]
+tabs = ["🚌 Bus Check-in", "🍽 Food Collection", "📊 Dashboard"]
 
 if "active_tab" not in st.session_state or st.session_state.active_tab not in tabs:
     st.session_state.active_tab = tabs[0]
@@ -172,42 +178,53 @@ selected_tab = st.radio(
 df_latest = load_data()
 
 # --- Display content based on selected tab ---
-if selected_tab == "📋 Conference Check-in":
-    handle_action(st.container(), "Conference Check-in", "Conference Check-in", "Check-in", "Conference Check-in", "Conference Timestamp")
-elif selected_tab == "🚌 Bus Check-in":
+if selected_tab == "🚌 Bus Check-in":
     handle_action(st.container(), "Bus Check-in", "Bus Check-in", "Check-in", "Bus Check-in", "Bus Timestamp")
 elif selected_tab == "🍽 Food Collection":
     handle_action(st.container(), "Food Collection", "Food Collection", "Food collection", "Food Collection", "Food Timestamp")
-elif selected_tab == "🚍 Return Trip":
-    handle_action(st.container(), "Return Trip", "Return Trip", "Check-in", "Return Trip", "Return Timestamp")
 elif selected_tab == "📊 Dashboard":
     PASSWORD = st.secrets["auth"]["admin_password"]
+    REMEMBER_SECRET = st.secrets["auth"].get("remember_secret", PASSWORD)
 
-    # Initialize state
+    expected_token = _make_dash_token(REMEMBER_SECRET, PASSWORD)
+
+    # --- Restore from URL token ---
+    if st.query_params.get("dash") == expected_token:
+        st.session_state["dashboard_ok"] = True
+
     if "dashboard_ok" not in st.session_state:
         st.session_state["dashboard_ok"] = False
 
-    # If not authenticated yet
+    # --- Authentication gate ---
     if not st.session_state["dashboard_ok"]:
+        remember = st.checkbox("Remember after reload (stores a token in the URL)", value=True, key="dash_remember")
         pw = st.text_input("Enter Dashboard Password:", type="password", key="dash_pw")
 
         if st.button("Unlock Dashboard"):
             if pw == PASSWORD:
                 st.session_state["dashboard_ok"] = True
-                st.success("✅ Access granted. You won’t need to re-enter unless you refresh the page.")
+                if remember:
+                    st.query_params["dash"] = expected_token
+                st.success("✅ Access granted")
                 st.rerun()
             else:
                 st.error("❌ Wrong password")
-
         st.stop()
 
     # --- Protected Dashboard Section ---
     st.header("📊 Dashboard")
 
+    # Logout button
+    if st.button("🔒 Log out of Dashboard"):
+        st.session_state["dashboard_ok"] = False
+        qp = st.query_params.to_dict()
+        qp.pop("dash", None)
+        st.query_params.from_dict(qp)
+        st.rerun()
+
     df_latest = load_data()
     st.dataframe(df_latest)
 
-    # Download button
     csv_data = df_latest.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="⬇️ Download CSV",
@@ -218,12 +235,8 @@ elif selected_tab == "📊 Dashboard":
 
 # Metrics
 bus_count = (df_latest.get("Bus Check-in", pd.Series(dtype=str)) == "Yes").sum()
-conference_count = (df_latest.get("Conference Check-in", pd.Series(dtype=str)) == "Yes").sum()
 food_count = (df_latest.get("Food Collection", pd.Series(dtype=str)) == "Yes").sum()
-return_count = (df_latest.get("Return Trip", pd.Series(dtype=str)) == "Yes").sum()
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 col1.metric("Bus Check-ins", int(bus_count))
-col2.metric("Conference Check-ins", int(conference_count))
-col3.metric("Food Collections", int(food_count))
-col4.metric("Return Trip", int(return_count))
+col2.metric("Food Collections", int(food_count))
